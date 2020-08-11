@@ -130,7 +130,8 @@
               (return-from search-next-frame (aref id/frame-table n)))))))
 
 (defun virtual-frame-frames (virtual-frame)
-  (remove-if #'null (virtual-frame-id/frame-table virtual-frame)))
+  (coerce (remove-if #'null (virtual-frame-id/frame-table virtual-frame))
+          'list))
 
 (defun require-update-p (virtual-frame)
   (cond ((virtual-frame-changed virtual-frame) t)
