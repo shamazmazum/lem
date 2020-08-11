@@ -32,9 +32,9 @@
     :initform nil
     :accessor virtual-frame-impl
     :type lem:implementation)
-   (frames
-    :initarg :frames
-    :accessor virtual-frame-frames
+   (id/frame-table
+    :initarg :id/frame-table
+    :accessor virtual-frame-id/frame-table
     :type array)
    (current
     :initarg :current
@@ -60,15 +60,15 @@
   (declare (type frame frame))
   (let* ((buffer (make-buffer "*fm*" :enable-undo-p nil :temporary t))
          (%frame (%make-frame 0 frame))
-         (frames (make-array +fm-max-number-of-frames+ :initial-element nil)))
-    (setf (aref frames 0) %frame)
+         (id/frame-table (make-array +fm-max-number-of-frames+ :initial-element nil)))
+    (setf (aref id/frame-table 0) %frame)
     (setf (lem:variable-value 'truncate-lines :buffer buffer) nil)
     (let ((vf (make-instance 'virtual-frame
                              :impl impl
                              :buffer buffer
                              :width (display-width)
                              :height (display-height)
-                             :frames frames
+                             :id/frame-table id/frame-table
                              :current %frame
                              :buffer-list-map (make-hash-table))))
       vf)))
@@ -84,26 +84,26 @@
                :append buffer-list))))
 
 (defun find-unused-frame-id (virtual-frame)
-  (position-if #'null (virtual-frame-frames virtual-frame)))
+  (position-if #'null (virtual-frame-id/frame-table virtual-frame)))
 
 (defun num-frames (virtual-frame)
-  (count-if-not #'null (virtual-frame-frames virtual-frame)))
+  (count-if-not #'null (virtual-frame-id/frame-table virtual-frame)))
 
 (defun allocate-frame (virtual-frame frame)
   (declare (type %frame frame))
-  (setf (aref (virtual-frame-frames virtual-frame) (%frame-id frame))
+  (setf (aref (virtual-frame-id/frame-table virtual-frame) (%frame-id frame))
         frame))
 
 (defun free-frame (virtual-frame frame)
   (declare (type %frame frame))
-  (setf (aref (virtual-frame-frames virtual-frame) (%frame-id frame))
+  (setf (aref (virtual-frame-id/frame-table virtual-frame) (%frame-id frame))
         nil))
 
 (defun search-previous-frame (vf frame)
   (declare (type %frame frame))
-  (let* ((frames (virtual-frame-frames vf))
+  (let* ((id/frame-table (virtual-frame-id/frame-table vf))
          (id (%frame-id frame))
-         (len (length frames)))
+         (len (length id/frame-table)))
     (flet ((wrap (n)
              (if (minusp n)
                  (+ (1- len) n)
@@ -111,14 +111,14 @@
       (loop
         :for n := (wrap (1- id)) :then (wrap (1- n))
         :until (= n id)
-        :do (unless (null (aref frames n))
-              (return-from search-previous-frame (aref frames n)))))))
+        :do (unless (null (aref id/frame-table n))
+              (return-from search-previous-frame (aref id/frame-table n)))))))
 
 (defun search-next-frame (vf frame)
   (declare (type %frame frame))
-  (let* ((frames (virtual-frame-frames vf))
+  (let* ((id/frame-table (virtual-frame-id/frame-table vf))
          (id (%frame-id frame))
-         (len (length frames)))
+         (len (length id/frame-table)))
     (flet ((wrap (n)
              (if (>= n len)
                  (- len n)
@@ -126,8 +126,8 @@
       (loop
         :for n := (wrap (1+ id)) :then (wrap (1+ n))
         :until (= n id)
-        :do (unless (null (aref frames n))
-              (return-from search-next-frame (aref frames n)))))))
+        :do (unless (null (aref id/frame-table n))
+              (return-from search-next-frame (aref id/frame-table n)))))))
 
 (defun require-update-p (virtual-frame)
   (cond ((virtual-frame-changed virtual-frame) t)
@@ -159,7 +159,7 @@
            (charpos (point-charpos p)))
       (erase-buffer buffer)
       (loop
-        :for %frame :across (virtual-frame-frames window)
+        :for %frame :across (virtual-frame-id/frame-table window)
         :unless (null %frame)
         :do (let* ((focusp (eq %frame (virtual-frame-current window)))
                    (start-pos (point-charpos p)))
