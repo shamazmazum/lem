@@ -129,6 +129,9 @@
         :do (unless (null (aref id/frame-table n))
               (return-from search-next-frame (aref id/frame-table n)))))))
 
+(defun virtual-frame-frames (virtual-frame)
+  (remove-if #'null (virtual-frame-id/frame-table virtual-frame)))
+
 (defun require-update-p (virtual-frame)
   (cond ((virtual-frame-changed virtual-frame) t)
         ((not (= (display-width)
@@ -158,36 +161,34 @@
            (p (buffer-point buffer))
            (charpos (point-charpos p)))
       (erase-buffer buffer)
-      (loop
-        :for %frame :across (virtual-frame-id/frame-table window)
-        :unless (null %frame)
-        :do (let* ((focusp (eq %frame (virtual-frame-current window)))
-                   (start-pos (point-charpos p)))
-              (insert-button p
-                             ;; virtual frame name on header
-                             (let* ((frame (%frame-frame %frame))
-                                    (buffer (window-buffer (lem:frame-current-window frame)))
-                                    (name (buffer-name buffer)))
-                               (format nil "~a~a:~a "
-                                       (if focusp #\# #\space)
-                                       (%frame-id %frame)
-                                       (if (>= (length name) +fm-max-width-of-each-frame-name+)
-                                           (format nil "~a..."
-                                                   (subseq name 0 +fm-max-width-of-each-frame-name+))
-                                           name)))
-                             ;; set action when click
-                             (let ((%frame %frame))
-                               (lambda ()
-                                 (setf (virtual-frame-current window) %frame)
-                                 (setf (virtual-frame-changed window) t)))
-                             :attribute (if focusp
-                                            'fm-active-frame-name-attribute
-                                            'fm-frame-name-attribute))
-              ;; increment charpos
-              (when focusp
-                (let ((end-pos (point-charpos p)))
-                  (unless (<= start-pos charpos (1- end-pos))
-                    (setf charpos start-pos))))))
+      (dolist (%frame (virtual-frame-frames window))
+        (let* ((focusp (eq %frame (virtual-frame-current window)))
+               (start-pos (point-charpos p)))
+          (insert-button p
+                         ;; virtual frame name on header
+                         (let* ((frame (%frame-frame %frame))
+                                (buffer (window-buffer (lem:frame-current-window frame)))
+                                (name (buffer-name buffer)))
+                           (format nil "~a~a:~a "
+                                   (if focusp #\# #\space)
+                                   (%frame-id %frame)
+                                   (if (>= (length name) +fm-max-width-of-each-frame-name+)
+                                       (format nil "~a..."
+                                               (subseq name 0 +fm-max-width-of-each-frame-name+))
+                                       name)))
+                         ;; set action when click
+                         (let ((%frame %frame))
+                           (lambda ()
+                             (setf (virtual-frame-current window) %frame)
+                             (setf (virtual-frame-changed window) t)))
+                         :attribute (if focusp
+                                        'fm-active-frame-name-attribute
+                                        'fm-frame-name-attribute))
+          ;; increment charpos
+          (when focusp
+            (let ((end-pos (point-charpos p)))
+              (unless (<= start-pos charpos (1- end-pos))
+                (setf charpos start-pos))))))
       ;; fill right margin
       (let ((margin-right (- (display-width) (point-column p))))
         (when (> margin-right 0)
