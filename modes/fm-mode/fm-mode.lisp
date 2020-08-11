@@ -326,7 +326,7 @@
     (when (= num 1)
       (editor-error "cannot delete this virtual frame"))
     (remhash (virtual-frame-current vf) (virtual-frame-buffer-list-map vf))
-    (free-frame vf id)
+    (free-frame vf (virtual-frame-current vf))
     (let ((%frame (search-previous-frame vf (virtual-frame-current vf))))
       (setf (virtual-frame-current vf) %frame)
       (lem:map-frame (implementation) (%frame-frame %frame)))
