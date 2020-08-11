@@ -92,8 +92,8 @@
   (setf (aref (virtual-frame-frames virtual-frame) (%frame-id frame))
         frame))
 
-(defun free-frame (virtual-frame id)
-  (setf (aref (virtual-frame-frames virtual-frame) id)
+(defun free-frame (virtual-frame frame)
+  (setf (aref (virtual-frame-frames virtual-frame) (%frame-id frame))
         nil))
 
 (defun search-previous-frame (vf frame)
