@@ -99,9 +99,9 @@
   (setf (aref (virtual-frame-id/frame-table virtual-frame) (%frame-id frame))
         nil))
 
-(defun search-previous-frame (vf frame)
+(defun search-previous-frame (virtual-frame frame)
   (declare (type %frame frame))
-  (let* ((id/frame-table (virtual-frame-id/frame-table vf))
+  (let* ((id/frame-table (virtual-frame-id/frame-table virtual-frame))
          (id (%frame-id frame))
          (len (length id/frame-table)))
     (flet ((wrap (n)
@@ -114,9 +114,9 @@
         :do (unless (null (aref id/frame-table n))
               (return-from search-previous-frame (aref id/frame-table n)))))))
 
-(defun search-next-frame (vf frame)
+(defun search-next-frame (virtual-frame frame)
   (declare (type %frame frame))
-  (let* ((id/frame-table (virtual-frame-id/frame-table vf))
+  (let* ((id/frame-table (virtual-frame-id/frame-table virtual-frame))
          (id (%frame-id frame))
          (len (length id/frame-table)))
     (flet ((wrap (n)
