@@ -413,7 +413,7 @@
     (check-nth-frame 3)
     (fm-next)
     (check-nth-frame 0)
-
+    ;; fm-delete
     (fm-delete)
     (check-nth-frame 1)
     ))
