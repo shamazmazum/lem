@@ -99,35 +99,37 @@
   (setf (aref (virtual-frame-id/frame-table virtual-frame) (%frame-id frame))
         nil))
 
+(defun get-frame-from-id (virtual-frame id)
+  (aref (virtual-frame-id/frame-table virtual-frame) id))
+
+(defun liner-search-frame (virtual-frame frame dir wrap)
+  (let ((id (%frame-id frame)))
+    (loop :for n := (funcall wrap (+ id dir)) :then (funcall wrap (+ n dir))
+          :until (= n id)
+          :do (unless (null (get-frame-from-id virtual-frame n))
+                (return-from liner-search-frame (get-frame-from-id virtual-frame n))))))
+
 (defun search-previous-frame (virtual-frame frame)
   (declare (type %frame frame))
-  (let* ((id/frame-table (virtual-frame-id/frame-table virtual-frame))
-         (id (%frame-id frame))
-         (len (length id/frame-table)))
-    (flet ((wrap (n)
-             (if (minusp n)
-                 (+ (1- len) n)
-                 n)))
-      (loop
-        :for n := (wrap (1- id)) :then (wrap (1- n))
-        :until (= n id)
-        :do (unless (null (aref id/frame-table n))
-              (return-from search-previous-frame (aref id/frame-table n)))))))
+  (let ((len (length (virtual-frame-id/frame-table virtual-frame))))
+    (liner-search-frame virtual-frame
+                        frame
+                        -1
+                        (lambda (n)
+                          (if (minusp n)
+                              (+ (1- len) n)
+                              n)))))
 
 (defun search-next-frame (virtual-frame frame)
   (declare (type %frame frame))
-  (let* ((id/frame-table (virtual-frame-id/frame-table virtual-frame))
-         (id (%frame-id frame))
-         (len (length id/frame-table)))
-    (flet ((wrap (n)
-             (if (>= n len)
-                 (- len n)
-                 n)))
-      (loop
-        :for n := (wrap (1+ id)) :then (wrap (1+ n))
-        :until (= n id)
-        :do (unless (null (aref id/frame-table n))
-              (return-from search-next-frame (aref id/frame-table n)))))))
+  (let ((len (length (virtual-frame-id/frame-table virtual-frame))))
+    (liner-search-frame virtual-frame
+                        frame
+                        1
+                        (lambda (n)
+                          (if (>= n len)
+                              (- len n)
+                              n)))))
 
 (defun virtual-frame-frames (virtual-frame)
   (coerce (remove-if #'null (virtual-frame-id/frame-table virtual-frame))
