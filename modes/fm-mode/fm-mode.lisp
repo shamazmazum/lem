@@ -233,8 +233,7 @@
                    ;; temporary switched current frame and buffer-list
                    (map-frame display (%frame-frame frame))
                    (setf (virtual-frame-current vf) frame)
-                   (let ((frame-buffer-list (gethash frame (virtual-frame-buffer-list-map vf))))
-                     (set-to-current-buffer-list vf frame))
+                   (set-to-current-buffer-list vf frame)
                    ;; switch buffers that will be deleted
                    (dolist (window (get-buffer-windows buffer))
                      (with-current-window window
